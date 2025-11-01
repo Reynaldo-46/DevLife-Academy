@@ -2,9 +2,10 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'CREATOR' | 'SUBSCRIBER';
+  role: 'ADMIN' | 'VIEWER';
   profileImage?: string;
   bio?: string;
+  isEmailVerified?: boolean;
   joinDate: string;
 }
 
@@ -86,7 +87,10 @@ export interface RegisterDto {
   email: string;
   name: string;
   password: string;
-  role?: 'CREATOR' | 'SUBSCRIBER';
+}
+
+export interface VerifyEmailDto {
+  token: string;
 }
 
 export interface CreateVideoDto {

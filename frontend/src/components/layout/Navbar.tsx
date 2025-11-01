@@ -78,7 +78,7 @@ const Navbar: React.FC = () => {
 
             {isAuthenticated ? (
               <>
-                {user?.role === 'CREATOR' && (
+                {user?.role === 'ADMIN' && (
                   <Link
                     to="/dashboard"
                     className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 font-medium"
@@ -193,7 +193,7 @@ const Navbar: React.FC = () => {
 
             {isAuthenticated ? (
               <>
-                {user?.role === 'CREATOR' && (
+                {user?.role === 'ADMIN' && (
                   <Link
                     to="/dashboard"
                     className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"

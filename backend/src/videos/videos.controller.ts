@@ -13,6 +13,8 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { VideosService } from './videos.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { EmailVerifiedGuard } from '../auth/guards/email-verified.guard';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -22,16 +24,18 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 export class VideosController {
   constructor(private videosService: VideosService) {}
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @Post()
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a new video' })
+  @ApiOperation({ summary: 'Create a new video (Admin only)' })
   async create(@Request() req, @Body() createVideoDto: CreateVideoDto) {
     return this.videosService.create(req.user.userId, createVideoDto);
   }
 
+  @UseGuards(JwtAuthGuard, EmailVerifiedGuard)
   @Get()
-  @ApiOperation({ summary: 'Get all videos' })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all videos (Requires verified email)' })
   @ApiQuery({ name: 'visibility', required: false })
   @ApiQuery({ name: 'creatorId', required: false })
   @ApiQuery({ name: 'skip', required: false })
@@ -50,16 +54,18 @@ export class VideosController {
     });
   }
 
+  @UseGuards(JwtAuthGuard, EmailVerifiedGuard)
   @Get(':id')
-  @ApiOperation({ summary: 'Get video by ID' })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get video by ID (Requires verified email)' })
   async findOne(@Param('id') id: string, @Request() req) {
     return this.videosService.findOne(id, req.user?.userId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @Put(':id')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update video' })
+  @ApiOperation({ summary: 'Update video (Admin only)' })
   async update(
     @Param('id') id: string,
     @Request() req,
@@ -68,48 +74,50 @@ export class VideosController {
     return this.videosService.update(id, req.user.userId, updateVideoDto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @Post(':id/publish')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Publish video' })
+  @ApiOperation({ summary: 'Publish video (Admin only)' })
   async publish(@Param('id') id: string, @Request() req) {
     return this.videosService.publish(id, req.user.userId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @Delete(':id')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete video' })
+  @ApiOperation({ summary: 'Delete video (Admin only)' })
   async delete(@Param('id') id: string, @Request() req) {
     return this.videosService.delete(id, req.user.userId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, EmailVerifiedGuard)
   @Post(':id/like')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Like/unlike video' })
+  @ApiOperation({ summary: 'Like/unlike video (Requires verified email)' })
   async like(@Param('id') id: string, @Request() req) {
     return this.videosService.likeVideo(id, req.user.userId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, EmailVerifiedGuard)
   @Post(':id/save')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Save/unsave video' })
+  @ApiOperation({ summary: 'Save/unsave video (Requires verified email)' })
   async save(@Param('id') id: string, @Request() req) {
     return this.videosService.saveVideo(id, req.user.userId);
   }
 
+  @UseGuards(JwtAuthGuard, EmailVerifiedGuard)
   @Get(':id/comments')
-  @ApiOperation({ summary: 'Get video comments' })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get video comments (Requires verified email)' })
   async getComments(@Param('id') id: string) {
     return this.videosService.getComments(id);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, EmailVerifiedGuard)
   @Post(':id/comments')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Add comment to video' })
+  @ApiOperation({ summary: 'Add comment to video (Requires verified email)' })
   async createComment(
     @Param('id') id: string,
     @Request() req,

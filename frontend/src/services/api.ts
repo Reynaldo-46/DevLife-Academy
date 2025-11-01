@@ -70,8 +70,18 @@ export const authAPI = {
     return response.data;
   },
 
-  register: async (data: RegisterDto): Promise<AuthResponse> => {
+  register: async (data: RegisterDto) => {
     const response = await api.post('/api/auth/register', data);
+    return response.data;
+  },
+
+  verifyEmail: async (token: string) => {
+    const response = await api.post('/api/auth/verify-email', { token });
+    return response.data;
+  },
+
+  resendVerification: async (email: string) => {
+    const response = await api.post('/api/auth/resend-verification', { email });
     return response.data;
   },
 

@@ -11,8 +11,8 @@ datasource db {
 }
 
 enum UserRole {
-  CREATOR
-  SUBSCRIBER
+  ADMIN
+  VIEWER
 }
 
 enum VideoVisibility {
@@ -29,16 +29,19 @@ enum SubscriptionStatus {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  name          String
-  passwordHash  String   @map("password_hash")
-  role          UserRole @default(SUBSCRIBER)
-  profileImage  String?  @map("profile_image")
-  bio           String?
-  joinDate      DateTime @default(now()) @map("join_date")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(uuid())
+  email             String   @unique
+  name              String
+  passwordHash      String   @map("password_hash")
+  role              UserRole @default(VIEWER)
+  profileImage      String?  @map("profile_image")
+  bio               String?
+  isEmailVerified   Boolean  @default(false) @map("is_email_verified")
+  emailVerificationToken String? @map("email_verification_token")
+  emailVerificationExpiry DateTime? @map("email_verification_expiry")
+  joinDate          DateTime @default(now()) @map("join_date")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   videos        Video[]
   playlists     Playlist[]

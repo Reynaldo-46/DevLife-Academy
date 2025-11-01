@@ -11,6 +11,7 @@ import VideosPage from './pages/VideosPage';
 import VideoPlayerPage from './pages/VideoPlayerPage';
 import UploadVideoPage from './pages/UploadVideoPage';
 import DashboardPage from './pages/DashboardPage';
+import SearchPage from './pages/SearchPage';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
                 <Route path="/videos/:id" element={<VideoPlayerPage />} />
                 <Route path="/upload" element={<UploadVideoPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/search" element={<SearchPage />} />
               </Routes>
             </main>
             <Footer />

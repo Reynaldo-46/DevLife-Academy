@@ -7,6 +7,7 @@ import { PlaylistsModule } from './playlists/playlists.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { UploadModule } from './upload/upload.module';
+import { SearchModule } from './search/search.module';
 import { PrismaService } from './common/prisma.service';
 
 @Module({
@@ -21,6 +22,7 @@ import { PrismaService } from './common/prisma.service';
     PaymentsModule,
     AnalyticsModule,
     UploadModule,
+    SearchModule,
   ],
   providers: [PrismaService],
   exports: [PrismaService],

@@ -1,0 +1,239 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CREATOR
+  SUBSCRIBER
+  ADMIN
+}
+
+enum VideoVisibility {
+  PUBLIC
+  PRIVATE
+  PAID
+  SUBSCRIBER_ONLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  INCOMPLETE
+  TRIALING
+}
+
+enum PlanType {
+  MONTHLY
+  ANNUAL
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  passwordHash  String   @map("password_hash")
+  role          UserRole @default(SUBSCRIBER)
+  profileImage  String?  @map("profile_image")
+  bio           String?  @db.Text
+  joinDate      DateTime @default(now()) @map("join_date")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  videos         Video[]
+  playlists      Playlist[]
+  subscriptions  Subscription[]
+  comments       Comment[]
+  likes          Like[]
+  watchHistory   WatchHistory[]
+  savedVideos    SavedVideo[]
+  refreshTokens  RefreshToken[]
+
+  @@map("users")
+}
+
+model Video {
+  id            String          @id @default(cuid())
+  creatorId     String          @map("creator_id")
+  title         String
+  description   String?         @db.Text
+  tags          String[]
+  visibility    VideoVisibility @default(PUBLIC)
+  price         Decimal?        @db.Decimal(10, 2)
+  s3Key         String          @map("s3_key")
+  hlsUrl        String          @map("hls_url")
+  thumbnailUrl  String          @map("thumbnail_url")
+  duration      Int
+  transcript    String?         @db.Text
+  views         Int             @default(0)
+  publishedAt   DateTime?       @map("published_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  creator       User            @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  playlistItems PlaylistVideo[]
+  comments      Comment[]
+  likes         Like[]
+  analytics     Analytics[]
+  watchHistory  WatchHistory[]
+  savedBy       SavedVideo[]
+
+  @@index([creatorId])
+  @@index([visibility])
+  @@index([publishedAt])
+  @@map("videos")
+}
+
+model Playlist {
+  id          String   @id @default(cuid())
+  creatorId   String   @map("creator_id")
+  title       String
+  description String?  @db.Text
+  coverImage  String?  @map("cover_image")
+  isPublic    Boolean  @default(true) @map("is_public")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  creator User            @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  videos  PlaylistVideo[]
+
+  @@index([creatorId])
+  @@map("playlists")
+}
+
+model PlaylistVideo {
+  id         String   @id @default(cuid())
+  playlistId String   @map("playlist_id")
+  videoId    String   @map("video_id")
+  order      Int
+  addedAt    DateTime @default(now()) @map("added_at")
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  video    Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, videoId])
+  @@index([playlistId])
+  @@index([videoId])
+  @@map("playlist_videos")
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @map("user_id")
+  stripeSubscriptionId String             @unique @map("stripe_subscription_id")
+  stripeCustomerId     String             @map("stripe_customer_id")
+  planType             PlanType
+  status               SubscriptionStatus
+  currentPeriodStart   DateTime           @map("current_period_start")
+  currentPeriodEnd     DateTime           @map("current_period_end")
+  cancelAtPeriodEnd    Boolean            @default(false) @map("cancel_at_period_end")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  videoId   String   @map("video_id")
+  userId    String   @map("user_id")
+  parentId  String?  @map("parent_id")
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  video   Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([videoId])
+  @@index([userId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  videoId   String   @map("video_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, userId])
+  @@index([videoId])
+  @@index([userId])
+  @@map("likes")
+}
+
+model SavedVideo {
+  id        String   @id @default(cuid())
+  videoId   String   @map("video_id")
+  userId    String   @map("user_id")
+  savedAt   DateTime @default(now()) @map("saved_at")
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, userId])
+  @@index([userId])
+  @@map("saved_videos")
+}
+
+model WatchHistory {
+  id              String   @id @default(cuid())
+  videoId         String   @map("video_id")
+  userId          String   @map("user_id")
+  secondsWatched  Int      @map("seconds_watched")
+  lastWatchedAt   DateTime @default(now()) @map("last_watched_at")
+  completed       Boolean  @default(false)
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, userId])
+  @@index([userId])
+  @@index([lastWatchedAt])
+  @@map("watch_history")
+}
+
+model Analytics {
+  id             String   @id @default(cuid())
+  videoId        String   @map("video_id")
+  userId         String?  @map("user_id")
+  secondsWatched Int      @map("seconds_watched")
+  watchedAt      DateTime @default(now()) @map("watched_at")
+  deviceType     String?  @map("device_type")
+  source         String?
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([videoId])
+  @@index([watchedAt])
+  @@map("analytics")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}

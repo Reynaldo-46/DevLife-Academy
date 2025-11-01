@@ -212,6 +212,9 @@ const DashboardPage: React.FC = () => {
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Transcoding
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Visibility
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -266,6 +269,35 @@ const DashboardPage: React.FC = () => {
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
                             <XCircleIcon className="w-4 h-4 mr-1" />
                             Draft
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {video.transcodingStatus === 'COMPLETED' ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
+                            <CheckCircleIcon className="w-4 h-4 mr-1" />
+                            Ready
+                          </span>
+                        ) : video.transcodingStatus === 'PROCESSING' ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div
+                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${video.transcodingProgress || 0}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">
+                              {video.transcodingProgress || 0}%
+                            </span>
+                          </div>
+                        ) : video.transcodingStatus === 'FAILED' ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400">
+                            <XCircleIcon className="w-4 h-4 mr-1" />
+                            Failed
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400">
+                            ⏳ Pending
                           </span>
                         )}
                       </td>

@@ -23,6 +23,9 @@ export interface Video {
   duration?: number;
   transcript?: string;
   publishedAt?: string;
+  transcodingStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  transcodingProgress?: number;
+  transcodingError?: string;
   createdAt: string;
   updatedAt: string;
   creator?: {
@@ -34,6 +37,17 @@ export interface Video {
     likes: number;
     comments: number;
   };
+  qualityVariants?: QualityVariant[];
+}
+
+export interface QualityVariant {
+  id: string;
+  videoId: string;
+  quality: string;
+  url: string;
+  size?: number;
+  bitrate?: number;
+  createdAt: string;
 }
 
 export interface Playlist {

@@ -59,6 +59,13 @@ model User {
   @@map("users")
 }
 
+enum TranscodingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model Video {
   id            String          @id @default(uuid())
   creatorId     String          @map("creator_id")
@@ -73,6 +80,9 @@ model Video {
   duration      Int?            // in seconds
   transcript    String?
   publishedAt   DateTime?       @map("published_at")
+  transcodingStatus TranscodingStatus @default(PENDING) @map("transcoding_status")
+  transcodingProgress Int @default(0) @map("transcoding_progress") // 0-100
+  transcodingError String? @map("transcoding_error")
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
 
@@ -82,11 +92,29 @@ model Video {
   comments      Comment[]
   likes         VideoLike[]
   savedBy       SavedVideo[]
+  qualityVariants QualityVariant[]
 
   @@index([creatorId])
   @@index([visibility])
   @@index([publishedAt])
+  @@index([transcodingStatus])
   @@map("videos")
+}
+
+model QualityVariant {
+  id        String   @id @default(uuid())
+  videoId   String   @map("video_id")
+  quality   String   // "360p", "720p", "1080p"
+  url       String
+  size      Int?     // file size in bytes
+  bitrate   Int?     // bitrate in kbps
+  createdAt DateTime @default(now()) @map("created_at")
+
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, quality])
+  @@index([videoId])
+  @@map("quality_variants")
 }
 
 model Playlist {

@@ -11,6 +11,8 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import { VideosService } from './videos.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
@@ -18,18 +20,33 @@ import { EmailVerifiedGuard } from '../auth/guards/email-verified.guard';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { TranscodingJobData } from '../transcoding/transcoding.processor';
 
 @ApiTags('videos')
 @Controller('api/videos')
 export class VideosController {
-  constructor(private videosService: VideosService) {}
+  constructor(
+    private videosService: VideosService,
+    @InjectQueue('transcoding') private transcodingQueue: Queue<TranscodingJobData>,
+  ) {}
 
   @UseGuards(JwtAuthGuard, AdminGuard)
   @Post()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new video (Admin only)' })
   async create(@Request() req, @Body() createVideoDto: CreateVideoDto) {
-    return this.videosService.create(req.user.userId, createVideoDto);
+    const video = await this.videosService.create(req.user.userId, createVideoDto);
+    
+    // Add transcoding job to queue if S3 key is provided
+    if (video.s3Key) {
+      await this.transcodingQueue.add('transcode-video', {
+        videoId: video.id,
+        originalS3Key: video.s3Key,
+        userId: req.user.userId,
+      });
+    }
+    
+    return video;
   }
 
   @UseGuards(JwtAuthGuard, EmailVerifiedGuard)

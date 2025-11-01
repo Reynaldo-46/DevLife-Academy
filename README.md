@@ -34,9 +34,34 @@ A full-stack e-learning and vlog platform showcasing the daily life of a work-fr
 - **Prisma** + **PostgreSQL** - Type-safe ORM & database
 - **JWT** - Secure authentication with refresh tokens
 - **Stripe** - Payment processing
+- **FFmpeg** - Video transcoding (self-hosted)
+- **BullMQ** + **Redis** - Background job queue
+- **AWS S3** - Video storage
+- **Socket.io** - Real-time notifications
 - **Swagger** - API documentation
 
 ## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+ and npm
+- PostgreSQL database
+- Redis server (for video transcoding queue)
+- FFmpeg (for video transcoding)
+- AWS S3 account (for video storage)
+- Stripe account (for payments)
+
+### Install FFmpeg
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install ffmpeg redis-server
+```
+
+**macOS:**
+```bash
+brew install ffmpeg redis
+```
+
+See [FFMPEG_SETUP.md](FFMPEG_SETUP.md) for complete FFmpeg setup and configuration.
 
 ### Quick Start
 See [QUICKSTART.md](QUICKSTART.md) for detailed setup instructions.
@@ -46,7 +71,7 @@ See [QUICKSTART.md](QUICKSTART.md) for detailed setup instructions.
 cd backend
 npm install
 cp .env.example .env
-# Update .env with your credentials
+# Update .env with your credentials (DB, AWS, Redis, Stripe)
 npx prisma generate
 npx prisma migrate dev
 npm run prisma:seed  # Creates admin account

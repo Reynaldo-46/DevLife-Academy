@@ -9,6 +9,7 @@ import RegisterPage from './pages/RegisterPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import VideosPage from './pages/VideosPage';
 import VideoPlayerPage from './pages/VideoPlayerPage';
+import UploadVideoPage from './pages/UploadVideoPage';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
                 <Route path="/verify-email" element={<VerifyEmailPage />} />
                 <Route path="/videos" element={<VideosPage />} />
                 <Route path="/videos/:id" element={<VideoPlayerPage />} />
+                <Route path="/upload" element={<UploadVideoPage />} />
               </Routes>
             </main>
             <Footer />

@@ -74,6 +74,15 @@ const Navbar: React.FC = () => {
               Playlists
             </Link>
 
+            {isAuthenticated && user?.role === 'ADMIN' && (
+              <Link
+                to="/upload"
+                className="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow-md transform hover:scale-105"
+              >
+                Upload
+              </Link>
+            )}
+
             <ThemeToggle />
 
             {isAuthenticated ? (

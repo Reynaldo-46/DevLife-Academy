@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
+import { EmailService } from '../email/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
@@ -14,6 +15,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private emailService: EmailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -32,10 +34,15 @@ export class AuthService {
       emailVerificationExpiry: verificationExpiry,
     });
 
-    // TODO: Send verification email
-    // For now, we'll return the token in response (in production, send via email)
+    // Send verification email
+    await this.emailService.sendVerificationEmail(
+      user.email,
+      user.name,
+      verificationToken,
+    );
+
     return {
-      message: 'Registration successful. Please verify your email to access content.',
+      message: 'Registration successful. Please check your email to verify your account.',
       user: {
         id: user.id,
         email: user.email,
@@ -43,7 +50,10 @@ export class AuthService {
         role: user.role,
         isEmailVerified: user.isEmailVerified,
       },
-      verificationToken, // In production, don't return this - send via email
+      // In development, also return token for easy testing
+      ...(this.configService.get('NODE_ENV') !== 'production' && {
+        verificationToken,
+      }),
     };
   }
 
@@ -64,6 +74,9 @@ export class AuthService {
 
     // Mark email as verified
     await this.usersService.verifyEmail(user.id);
+
+    // Send welcome email
+    await this.emailService.sendWelcomeEmail(user.email, user.name);
 
     // Generate tokens after successful verification
     const tokens = await this.generateTokens(user.id, user.email, user.role);

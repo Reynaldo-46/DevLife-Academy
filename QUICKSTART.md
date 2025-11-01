@@ -56,6 +56,17 @@ npx prisma generate
 npx prisma migrate dev --name init
 ```
 
+**Create the admin account:**
+```bash
+npm run prisma:seed
+```
+
+This creates an admin account with:
+- Email: `admin@devlifeacademy.com`
+- Password: `AdminPassword123!`
+
+💡 **Tip:** Customize admin credentials by editing `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME` in `.env` before running the seed.
+
 Start the backend:
 ```bash
 npm run start:dev
@@ -89,14 +100,31 @@ npm run dev
 
 ✅ Frontend running at http://localhost:5173
 
-## Step 5: Test the Application
+## Step 5: Login as Admin
 
 1. Open http://localhost:5173 in your browser
-2. Click "Sign Up" to create an account
-3. Choose "Creator" or "Subscriber" role
-4. Explore the platform!
+2. Click "Login" in the navigation bar
+3. Enter admin credentials:
+   - Email: `admin@devlifeacademy.com`
+   - Password: `AdminPassword123!`
+4. You're now logged in as admin! 🎉
 
-## Default Test Data (Optional)
+As admin, you can:
+- Upload and manage videos
+- Create playlists/courses
+- View analytics
+- Access all platform features
+
+## Step 6: Create a Viewer Account (Optional)
+
+To test the viewer experience:
+1. Logout from admin account
+2. Click "Sign Up"
+3. Create a new account (automatically assigned VIEWER role)
+4. Verify your email using the token shown
+5. Login and view content
+
+## Admin Setup
 
 You can create a seed file to populate test data:
 

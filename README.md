@@ -38,6 +38,9 @@ A full-stack e-learning and vlog platform showcasing the daily life of a work-fr
 
 ## 🚀 Getting Started
 
+### Quick Start
+See [QUICKSTART.md](QUICKSTART.md) for detailed setup instructions.
+
 ### Backend Setup
 ```bash
 cd backend
@@ -45,6 +48,8 @@ npm install
 cp .env.example .env
 # Update .env with your credentials
 npx prisma generate
+npx prisma migrate dev
+npm run prisma:seed  # Creates admin account
 npm run start:dev
 ```
 
@@ -60,6 +65,15 @@ npm run dev
 ```
 
 App: `http://localhost:5173`
+
+### Admin Access
+See [ADMIN_SETUP.md](ADMIN_SETUP.md) for how to create and access your admin account.
+
+**Default admin credentials:**
+- Email: `admin@devlifeacademy.com`
+- Password: `AdminPassword123!`
+
+⚠️ Change these in your `.env` file and run `npm run prisma:seed` to create your admin account.
 
 ## 📁 Project Structure
 

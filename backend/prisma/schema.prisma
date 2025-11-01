@@ -39,6 +39,9 @@ model User {
   isEmailVerified   Boolean  @default(false) @map("is_email_verified")
   emailVerificationToken String? @map("email_verification_token")
   emailVerificationExpiry DateTime? @map("email_verification_expiry")
+  notificationPreferences String? @default("{\"email\":true,\"push\":true,\"inApp\":true}") @map("notification_preferences")
+  isSuspended       Boolean  @default(false) @map("is_suspended")
+  lastLoginAt       DateTime? @map("last_login_at")
   joinDate          DateTime @default(now()) @map("join_date")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
@@ -50,6 +53,8 @@ model User {
   comments      Comment[]
   videoLikes    VideoLike[]
   savedVideos   SavedVideo[]
+  notifications Notification[]
+  activityLogs  ActivityLog[]
 
   @@map("users")
 }
@@ -199,4 +204,41 @@ model SavedVideo {
   @@index([videoId])
   @@index([userId])
   @@map("saved_videos")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  action      String
+  entityType  String   @map("entity_type")
+  entityId    String?  @map("entity_id")
+  details     String?
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("activity_logs")
 }

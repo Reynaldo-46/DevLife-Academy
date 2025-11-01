@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ThemeToggle from '../common/ThemeToggle';
+import NotificationBell from '../notifications/NotificationBell';
 import {
   MagnifyingGlassIcon,
   Bars3Icon,
@@ -85,6 +86,8 @@ const Navbar: React.FC = () => {
 
             <ThemeToggle />
 
+            {isAuthenticated && <NotificationBell />}
+
             {isAuthenticated ? (
               <>
                 {user?.role === 'ADMIN' && (
@@ -122,6 +125,14 @@ const Navbar: React.FC = () => {
                     >
                       Settings
                     </Link>
+                    {user?.role === 'ADMIN' && (
+                      <Link
+                        to="/admin"
+                        className="block px-4 py-2 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors duration-150 font-medium"
+                      >
+                        Admin Panel
+                      </Link>
+                    )}
                     <hr className="my-1 border-gray-200 dark:border-gray-700" />
                     <button
                       onClick={handleLogout}

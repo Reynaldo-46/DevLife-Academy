@@ -8,6 +8,8 @@ import { PaymentsModule } from './payments/payments.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { UploadModule } from './upload/upload.module';
 import { SearchModule } from './search/search.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { AdminModule } from './admin/admin.module';
 import { PrismaService } from './common/prisma.service';
 
 @Module({
@@ -23,6 +25,8 @@ import { PrismaService } from './common/prisma.service';
     AnalyticsModule,
     UploadModule,
     SearchModule,
+    NotificationsModule,
+    AdminModule,
   ],
   providers: [PrismaService],
   exports: [PrismaService],

@@ -1,5 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
+import * as bcrypt from 'bcrypt';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateSettingsDto } from './dto/update-settings.dto';
 
 @Injectable()
 export class UsersService {
@@ -89,6 +92,54 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id: userId },
       data,
+    });
+  }
+
+  async getSettings(userId: string) {
+    const user = await this.findById(userId);
+    return {
+      notificationPreferences: user.notificationPreferences 
+        ? JSON.parse(user.notificationPreferences) 
+        : { email: true, push: true, inApp: true },
+    };
+  }
+
+  async updateSettings(userId: string, data: UpdateSettingsDto) {
+    const prefs = {
+      email: data.emailNotifications ?? true,
+      push: data.pushNotifications ?? true,
+      inApp: data.inAppNotifications ?? true,
+    };
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        notificationPreferences: JSON.stringify(prefs),
+      },
+    });
+  }
+
+  async changePassword(userId: string, data: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(data.currentPassword, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash: hashedPassword,
+      },
     });
   }
 }

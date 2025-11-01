@@ -51,10 +51,12 @@ export class UploadService {
     const s3Key = `videos/${userId}/${uuidv4()}.${fileExtension}`;
 
     // Create presigned URL (valid for 15 minutes)
+    // ACL: 'public-read' allows the video to be publicly viewable after upload
     const command = new PutObjectCommand({
       Bucket: this.bucketName,
       Key: s3Key,
       ContentType: fileType,
+      ACL: 'public-read', // Allow public read access for viewing videos
     });
 
     const uploadUrl = await getSignedUrl(this.s3Client, command, {
@@ -78,6 +80,31 @@ export class UploadService {
       Bucket: this.bucketName,
       Key: s3Key,
       ContentType: `image/${fileExtension}`,
+      ACL: 'public-read', // Allow public read access for thumbnails
+    });
+
+    const uploadUrl = await getSignedUrl(this.s3Client, command, {
+      expiresIn: 900,
+    });
+
+    return { uploadUrl, s3Key };
+  }
+
+  /**
+   * Generate a presigned URL for profile image upload
+   */
+  async getPresignedProfileImageUploadUrl(
+    fileName: string,
+    userId: string,
+  ): Promise<{ uploadUrl: string; s3Key: string }> {
+    const fileExtension = this.getFileExtension(fileName);
+    const s3Key = `profile-images/${userId}/${uuidv4()}.${fileExtension}`;
+
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: s3Key,
+      ContentType: `image/${fileExtension}`,
+      ACL: 'public-read', // Allow public read access for profile images
     });
 
     const uploadUrl = await getSignedUrl(this.s3Client, command, {

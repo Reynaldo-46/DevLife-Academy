@@ -100,6 +100,23 @@ See [ADMIN_SETUP.md](ADMIN_SETUP.md) for how to create and access your admin acc
 
 ⚠️ Change these in your `.env` file and run `npm run prisma:seed` to create your admin account.
 
+### AWS S3 CORS Configuration
+
+**Important:** Configure CORS on your S3 bucket to allow uploads from your frontend.
+
+See [S3_CORS_SETUP.md](S3_CORS_SETUP.md) for complete S3 CORS configuration instructions.
+
+**Quick Fix for CORS Errors:**
+1. Go to AWS S3 Console → Your Bucket → Permissions → CORS
+2. Add your frontend origin (e.g., `http://localhost:5173` for dev)
+3. Include `PUT` method in AllowedMethods
+4. Save changes
+
+Without proper CORS configuration, video uploads will fail with:
+```
+Access to XMLHttpRequest blocked by CORS policy
+```
+
 ## 📁 Project Structure
 
 ```

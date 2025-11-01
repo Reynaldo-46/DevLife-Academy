@@ -34,4 +34,17 @@ export class UploadController {
       req.user.userId,
     );
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('presigned-url/profile-image')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get presigned URL for profile image upload',
+  })
+  async getPresignedProfileImageUrl(@Request() req, @Body() dto: GetPresignedUrlDto) {
+    return this.uploadService.getPresignedProfileImageUploadUrl(
+      dto.fileName,
+      req.user.userId,
+    );
+  }
 }

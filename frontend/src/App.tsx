@@ -17,6 +17,7 @@ import SearchPage from './pages/SearchPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import AdminPanelPage from './pages/AdminPanelPage';
+import PlaylistsPage from './pages/PlaylistsPage';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
                 <Route path="/verify-email" element={<VerifyEmailPage />} />
                 <Route path="/videos" element={<VideosPage />} />
                 <Route path="/videos/:id" element={<VideoPlayerPage />} />
+                <Route path="/playlists" element={<PlaylistsPage />} />
                 <Route path="/upload" element={<UploadVideoPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/search" element={<SearchPage />} />

@@ -171,11 +171,16 @@ const UploadVideoPage: React.FC = () => {
 
       await api.post('/api/videos', videoData);
 
+      // Show success message
+      toast.success('Video uploaded successfully! Processing will begin shortly.');
+
       // Navigate to dashboard
       navigate('/dashboard');
     } catch (err: any) {
       console.error('Upload error:', err);
-      setError(err.response?.data?.message || 'Failed to upload video. Please try again.');
+      const errorMessage = err.response?.data?.message || 'Failed to upload video. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);

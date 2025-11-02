@@ -74,24 +74,31 @@ model Video {
   tags          String[]
   visibility    VideoVisibility @default(PUBLIC)
   price         Decimal?        @db.Decimal(10, 2)
-  s3Key         String?         @map("s3_key")
-  hlsUrl        String?         @map("hls_url")
-  thumbnailUrl  String?         @map("thumbnail_url")
-  duration      Int?            // in seconds
-  transcript    String?
-  publishedAt   DateTime?       @map("published_at")
-  transcodingStatus TranscodingStatus @default(PENDING) @map("transcoding_status")
-  transcodingProgress Int @default(0) @map("transcoding_progress") // 0-100
-  transcodingError String? @map("transcoding_error")
-  createdAt     DateTime        @default(now()) @map("created_at")
-  updatedAt     DateTime        @updatedAt @map("updated_at")
 
-  creator       User            @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  analytics     Analytics[]
+  // 🔽 Replace cloud-based fields with local equivalents
+  originalPath   String?  @map("original_path")     // local uploaded path
+  processedPath  String?  @map("processed_path")    // transcoded output from FFmpeg
+  thumbnailPath  String?  @map("thumbnail_path")    // local thumbnail path
+
+  // (Optionally keep S3 fields if you might re-enable cloud later)
+  s3Key          String?  @map("s3_key")
+  hlsUrl         String?  @map("hls_url")
+
+  duration       Int?
+  transcript     String?
+  publishedAt    DateTime?       @map("published_at")
+  transcodingStatus TranscodingStatus @default(PENDING) @map("transcoding_status")
+  transcodingProgress Int @default(0) @map("transcoding_progress")
+  transcodingError String? @map("transcoding_error")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  creator        User            @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  analytics      Analytics[]
   playlistVideos PlaylistVideo[]
-  comments      Comment[]
-  likes         VideoLike[]
-  savedBy       SavedVideo[]
+  comments       Comment[]
+  likes          VideoLike[]
+  savedBy        SavedVideo[]
   qualityVariants QualityVariant[]
 
   @@index([creatorId])
@@ -100,6 +107,7 @@ model Video {
   @@index([transcodingStatus])
   @@map("videos")
 }
+
 
 model QualityVariant {
   id        String   @id @default(uuid())

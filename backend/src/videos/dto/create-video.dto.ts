@@ -27,20 +27,21 @@ export class CreateVideoDto {
   @IsNumber()
   price?: number;
 
-  @ApiProperty({ required: false })
+  // 🔽 Local file paths for self-hosted videos
   @IsOptional()
   @IsString()
-  s3Key?: string;
+  @ApiProperty({ example: '/uploads/videos/myvideo.mp4', required: false })
+  originalPath?: string;
 
-  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  hlsUrl?: string;
+  @ApiProperty({ example: '/uploads/processed/myvideo_720p.mp4', required: false })
+  processedPath?: string;
 
-  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  thumbnailUrl?: string;
+  @ApiProperty({ example: '/uploads/thumbnails/myvideo_thumb.jpg', required: false })
+  thumbnailPath?: string;
 
   @ApiProperty({ example: 300, required: false })
   @IsOptional()

@@ -6,7 +6,7 @@ import { AddVideoToPlaylistDto } from './dto/add-video-to-playlist.dto';
 
 @Injectable()
 export class PlaylistsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(userId: string, createPlaylistDto: CreatePlaylistDto) {
     return this.prisma.playlist.create({
@@ -48,13 +48,16 @@ export class PlaylistsService {
               select: {
                 id: true,
                 title: true,
-                thumbnailUrl: true,
+                thumbnailPath: true,  // updated
                 duration: true,
+                originalPath: true,   // optional, if you want
+                processedPath: true,  // optional, if you want
               },
             },
           },
           orderBy: { order: 'asc' },
         },
+
       },
       orderBy: { createdAt: 'desc' },
     });

@@ -1,9 +1,20 @@
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  UseGuards,
+  Request,
+  UseInterceptors,
+  UploadedFile,
+  Body,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { UploadService } from './upload.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
-import { GetPresignedUrlDto } from './dto/get-presigned-url.dto';
 
 @ApiTags('upload')
 @Controller('api/upload')
@@ -11,40 +22,98 @@ export class UploadController {
   constructor(private uploadService: UploadService) {}
 
   @UseGuards(JwtAuthGuard, AdminGuard)
-  @Post('presigned-url/video')
+  @Post('video')
+  @UseInterceptors(FileInterceptor('file'))
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get presigned URL for video upload (Admin only)' })
-  async getPresignedVideoUrl(@Request() req, @Body() dto: GetPresignedUrlDto) {
-    return this.uploadService.getPresignedUploadUrl(
-      dto.fileName,
-      dto.fileType,
-      req.user.userId,
-    );
+  @ApiOperation({ summary: 'Upload video file (Admin only)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  async uploadVideo(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 * 1024 }), // 2GB
+        ],
+        fileIsRequired: true,
+      }),
+    )
+    file: Express.Multer.File,
+    @Request() req,
+  ) {
+    return this.uploadService.uploadVideo(file, req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard, AdminGuard)
-  @Post('presigned-url/thumbnail')
+  @Post('thumbnail')
+  @UseInterceptors(FileInterceptor('file'))
   @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Get presigned URL for thumbnail upload (Admin only)',
+  @ApiOperation({ summary: 'Upload thumbnail (Admin only)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
   })
-  async getPresignedThumbnailUrl(@Request() req, @Body() dto: GetPresignedUrlDto) {
-    return this.uploadService.getPresignedThumbnailUploadUrl(
-      dto.fileName,
-      req.user.userId,
-    );
+  async uploadThumbnail(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
+        ],
+        fileIsRequired: true,
+      }),
+    )
+    file: Express.Multer.File,
+    @Request() req,
+  ) {
+    return this.uploadService.uploadThumbnail(file, req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('presigned-url/profile-image')
+  @Post('profile-image')
+  @UseInterceptors(FileInterceptor('file'))
   @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Get presigned URL for profile image upload',
+  @ApiOperation({ summary: 'Upload profile image' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
   })
-  async getPresignedProfileImageUrl(@Request() req, @Body() dto: GetPresignedUrlDto) {
-    return this.uploadService.getPresignedProfileImageUploadUrl(
-      dto.fileName,
-      req.user.userId,
-    );
+  async uploadProfileImage(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
+        ],
+        fileIsRequired: true,
+      }),
+    )
+    file: Express.Multer.File,
+    @Request() req,
+  ) {
+    return this.uploadService.uploadProfileImage(file, req.user.userId);
   }
 }

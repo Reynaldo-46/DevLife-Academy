@@ -1,143 +1,185 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 @Injectable()
 export class UploadService {
-  private s3Client: S3Client;
-  private bucketName: string;
-  private region: string;
+  private uploadDir: string;
 
   constructor(private configService: ConfigService) {
-    this.region = this.configService.get<string>('AWS_REGION') || 'us-east-1';
-    this.bucketName = this.configService.get<string>('AWS_S3_BUCKET') || 'devlife-academy-videos';
-
-    // Initialize S3 client
-    this.s3Client = new S3Client({
-      region: this.region,
-      credentials: {
-        accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID') || '',
-        secretAccessKey: this.configService.get<string>('AWS_SECRET_ACCESS_KEY') || '',
-      },
-    });
+    this.uploadDir = this.configService.get<string>('UPLOAD_DIR') || path.join(process.cwd(), 'uploads');
+    this.initializeDirectories();
   }
 
   /**
-   * Generate a presigned URL for direct upload from frontend
+   * Initialize upload directories
    */
-  async getPresignedUploadUrl(
-    fileName: string,
-    fileType: string,
+  private async initializeDirectories() {
+    const dirs = [
+      path.join(this.uploadDir, 'originals'),
+      path.join(this.uploadDir, 'hls'),
+      path.join(this.uploadDir, 'thumbnails'),
+      path.join(this.uploadDir, 'profile-images'),
+    ];
+
+    for (const dir of dirs) {
+      try {
+        await fs.mkdir(dir, { recursive: true });
+      } catch (error) {
+        console.error(`Failed to create directory ${dir}:`, error);
+      }
+    }
+  }
+
+  /**
+   * Upload video file to local storage
+   */
+  async uploadVideo(
+    file: Express.Multer.File,
     userId: string,
-  ): Promise<{ uploadUrl: string; s3Key: string }> {
+  ): Promise<{ localPath: string; filename: string; url: string }> {
     // Validate file type
-    const allowedTypes = [
+    const allowedMimeTypes = [
       'video/mp4',
       'video/quicktime', // .mov
       'video/x-msvideo', // .avi
       'video/webm',
     ];
 
-    if (!allowedTypes.includes(fileType)) {
+    if (!allowedMimeTypes.includes(file.mimetype)) {
       throw new BadRequestException(
         'Invalid file type. Allowed types: MP4, MOV, AVI, WebM',
       );
     }
 
-    // Generate unique S3 key
-    const fileExtension = this.getFileExtension(fileName);
-    const s3Key = `videos/${userId}/${uuidv4()}.${fileExtension}`;
+    // Validate file size (2GB max)
+    const maxSize = 2 * 1024 * 1024 * 1024; // 2GB
+    if (file.size > maxSize) {
+      throw new BadRequestException(
+        'File size exceeds maximum allowed size of 2GB',
+      );
+    }
 
-    // Create presigned URL (valid for 15 minutes)
-    // ACL: 'public-read' allows the video to be publicly viewable after upload
-    const command = new PutObjectCommand({
-      Bucket: this.bucketName,
-      Key: s3Key,
-      ContentType: fileType,
-      ACL: 'public-read', // Allow public read access for viewing videos
-    });
+    // Generate unique filename
+    const fileExtension = this.getFileExtension(file.originalname);
+    const filename = `${uuidv4()}.${fileExtension}`;
 
-    const uploadUrl = await getSignedUrl(this.s3Client, command, {
-      expiresIn: 900, // 15 minutes
-    });
+    // Create user directory if it doesn't exist
+    const userDir = path.join(this.uploadDir, 'originals', userId);
+    await fs.mkdir(userDir, { recursive: true });
 
-    return { uploadUrl, s3Key };
+    // Save file
+    const localPath = path.join('uploads', 'originals', userId, filename);
+    const fullPath = path.join(process.cwd(), localPath);
+    await fs.writeFile(fullPath, file.buffer);
+
+    // Generate public URL
+    const baseUrl = this.configService.get<string>('API_URL') || 'http://localhost:3001';
+    const url = `${baseUrl}/${localPath.replace(/\\/g, '/')}`;
+
+    return { localPath, filename, url };
   }
 
   /**
-   * Generate a presigned URL for thumbnail upload
+   * Upload thumbnail to local storage
    */
-  async getPresignedThumbnailUploadUrl(
-    fileName: string,
+  async uploadThumbnail(
+    file: Express.Multer.File,
     userId: string,
-  ): Promise<{ uploadUrl: string; s3Key: string }> {
-    const fileExtension = this.getFileExtension(fileName);
-    const s3Key = `thumbnails/${userId}/${uuidv4()}.${fileExtension}`;
+  ): Promise<{ localPath: string; filename: string; url: string }> {
+    // Validate file type
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-    const command = new PutObjectCommand({
-      Bucket: this.bucketName,
-      Key: s3Key,
-      ContentType: `image/${fileExtension}`,
-      ACL: 'public-read', // Allow public read access for thumbnails
-    });
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Invalid file type. Allowed types: JPG, PNG, WebP',
+      );
+    }
 
-    const uploadUrl = await getSignedUrl(this.s3Client, command, {
-      expiresIn: 900,
-    });
+    // Generate unique filename
+    const fileExtension = this.getFileExtension(file.originalname);
+    const filename = `${uuidv4()}.${fileExtension}`;
 
-    return { uploadUrl, s3Key };
+    // Create user directory
+    const userDir = path.join(this.uploadDir, 'thumbnails', userId);
+    await fs.mkdir(userDir, { recursive: true });
+
+    // Save file
+    const localPath = path.join('uploads', 'thumbnails', userId, filename);
+    const fullPath = path.join(process.cwd(), localPath);
+    await fs.writeFile(fullPath, file.buffer);
+
+    // Generate public URL
+    const baseUrl = this.configService.get<string>('API_URL') || 'http://localhost:3001';
+    const url = `${baseUrl}/${localPath.replace(/\\/g, '/')}`;
+
+    return { localPath, filename, url };
   }
 
   /**
-   * Generate a presigned URL for profile image upload
+   * Upload profile image to local storage
    */
-  async getPresignedProfileImageUploadUrl(
-    fileName: string,
+  async uploadProfileImage(
+    file: Express.Multer.File,
     userId: string,
-  ): Promise<{ uploadUrl: string; s3Key: string }> {
-    const fileExtension = this.getFileExtension(fileName);
-    const s3Key = `profile-images/${userId}/${uuidv4()}.${fileExtension}`;
+  ): Promise<{ localPath: string; filename: string; url: string }> {
+    // Validate file type
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-    const command = new PutObjectCommand({
-      Bucket: this.bucketName,
-      Key: s3Key,
-      ContentType: `image/${fileExtension}`,
-      ACL: 'public-read', // Allow public read access for profile images
-    });
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Invalid file type. Allowed types: JPG, PNG, WebP',
+      );
+    }
 
-    const uploadUrl = await getSignedUrl(this.s3Client, command, {
-      expiresIn: 900,
-    });
+    // Generate unique filename
+    const fileExtension = this.getFileExtension(file.originalname);
+    const filename = `${uuidv4()}.${fileExtension}`;
 
-    return { uploadUrl, s3Key };
+    // Create user directory
+    const userDir = path.join(this.uploadDir, 'profile-images', userId);
+    await fs.mkdir(userDir, { recursive: true });
+
+    // Save file
+    const localPath = path.join('uploads', 'profile-images', userId, filename);
+    const fullPath = path.join(process.cwd(), localPath);
+    await fs.writeFile(fullPath, file.buffer);
+
+    // Generate public URL
+    const baseUrl = this.configService.get<string>('API_URL') || 'http://localhost:3001';
+    const url = `${baseUrl}/${localPath.replace(/\\/g, '/')}`;
+
+    return { localPath, filename, url };
   }
 
   /**
-   * Delete a file from S3
+   * Delete a file from local storage
    */
-  async deleteFile(s3Key: string): Promise<void> {
-    const command = new DeleteObjectCommand({
-      Bucket: this.bucketName,
-      Key: s3Key,
-    });
-
-    await this.s3Client.send(command);
+  async deleteFile(localPath: string): Promise<void> {
+    try {
+      const fullPath = path.join(process.cwd(), localPath);
+      await fs.unlink(fullPath);
+    } catch (error) {
+      console.error(`Failed to delete file ${localPath}:`, error);
+      // Don't throw error if file doesn't exist
+    }
   }
 
   /**
-   * Get the public URL for an S3 object
+   * Get public URL for a local file
    */
-  getPublicUrl(s3Key: string): string {
-    return `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${s3Key}`;
+  getPublicUrl(localPath: string): string {
+    const baseUrl = this.configService.get<string>('API_URL') || 'http://localhost:3001';
+    return `${baseUrl}/${localPath.replace(/\\/g, '/')}`;
   }
 
   /**
    * Extract file extension from filename
    */
-  private getFileExtension(fileName: string): string {
-    const parts = fileName.split('.');
+  private getFileExtension(filename: string): string {
+    const parts = filename.split('.');
     return parts[parts.length - 1].toLowerCase();
   }
 }

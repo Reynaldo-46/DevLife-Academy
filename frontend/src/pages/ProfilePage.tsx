@@ -42,24 +42,16 @@ export default function ProfilePage() {
     if (!imageFile) return profile.profileImage;
 
     try {
-      // Get presigned URL
-      const urlResponse = await api.post('/api/upload/presigned-url/profile-image', {
-        fileName: imageFile.name,
-        fileType: imageFile.type,
-      });
+      const formData = new FormData();
+      formData.append('file', imageFile);
 
-      const { url, key } = urlResponse.data;
-
-      // Upload to S3
-      await fetch(url, {
-        method: 'PUT',
-        body: imageFile,
+      const response = await api.post('/api/upload/profile-image', formData, {
         headers: {
-          'Content-Type': imageFile.type,
+          'Content-Type': 'multipart/form-data',
         },
       });
 
-      return key;
+      return response.data.url;
     } catch (error) {
       console.error('Error uploading image:', error);
       throw error;

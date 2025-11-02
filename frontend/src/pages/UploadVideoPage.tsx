@@ -100,42 +100,30 @@ const UploadVideoPage: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const uploadFileToS3 = async (
+  const uploadFileToLocal = async (
     file: File,
     type: 'video' | 'thumbnail'
   ): Promise<string> => {
-    // Get presigned URL
-    const endpoint = type === 'video' ? '/api/upload/presigned-url/video' : '/api/upload/presigned-url/thumbnail';
-    const { data } = await api.post(endpoint, {
-      fileName: file.name,
-      fileType: file.type,
+    const endpoint = type === 'video' ? '/api/upload/video' : '/api/upload/thumbnail';
+    
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const { data } = await api.post(endpoint, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const percentComplete = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress(percentComplete);
+        }
+      },
     });
 
-    // Upload to S3 with progress tracking
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const percentComplete = (e.loaded / e.total) * 100;
-          setUploadProgress(Math.round(percentComplete));
-        }
-      });
-
-      xhr.addEventListener('load', () => {
-        if (xhr.status === 200) {
-          resolve(data.s3Key);
-        } else {
-          reject(new Error('Upload failed'));
-        }
-      });
-
-      xhr.addEventListener('error', () => reject(new Error('Upload failed')));
-
-      xhr.open('PUT', data.uploadUrl);
-      xhr.setRequestHeader('Content-Type', file.type);
-      xhr.send(file);
-    });
+    return data.localPath;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -162,13 +150,12 @@ const UploadVideoPage: React.FC = () => {
 
     try {
       // Upload video
-      const s3Key = await uploadFileToS3(videoFile, 'video');
+      const localPath = await uploadFileToLocal(videoFile, 'video');
 
       // Upload thumbnail if provided
-      let thumbnailUrl = null;
+      let thumbnailPath = null;
       if (thumbnailFile) {
-        const thumbnailKey = await uploadFileToS3(thumbnailFile, 'thumbnail');
-        thumbnailUrl = `https://${import.meta.env.VITE_AWS_S3_BUCKET}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/${thumbnailKey}`;
+        thumbnailPath = await uploadFileToLocal(thumbnailFile, 'thumbnail');
       }
 
       // Create video metadata
@@ -178,8 +165,8 @@ const UploadVideoPage: React.FC = () => {
         tags: formData.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
         visibility: formData.visibility,
         price: formData.visibility === 'PAID' ? parseFloat(formData.price!) : undefined,
-        s3Key,
-        thumbnailUrl,
+        originalPath: localPath,
+        thumbnailPath,
       };
 
       await api.post('/api/videos', videoData);

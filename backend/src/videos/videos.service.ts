@@ -15,6 +15,7 @@ export class VideosService {
         creatorId: userId,
         tags: createVideoDto.tags || [],
         visibility: (createVideoDto.visibility as VideoVisibility) || 'PUBLIC',
+        publishedAt: new Date(), // Auto-publish videos on creation
       },
       include: {
         creator: {

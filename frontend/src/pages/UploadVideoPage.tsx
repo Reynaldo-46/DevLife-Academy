@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { CloudArrowUpIcon, FilmIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { toast } from 'react-toastify';
 import api from '../services/api';
 
 interface VideoFormData {

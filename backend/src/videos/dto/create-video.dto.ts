@@ -4,7 +4,6 @@ import {
   IsEnum,
   IsNumber,
   IsArray,
-  IsDecimal,
 } from 'class-validator';
 import { VideoVisibility } from '@prisma/client';
 
@@ -26,7 +25,7 @@ export class CreateVideoDto {
   visibility?: VideoVisibility;
 
   @IsOptional()
-  @IsDecimal()
+  @IsNumber()
   price?: number;
 
   @IsString()

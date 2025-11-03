@@ -120,18 +120,18 @@ const VideoPlayerPage: React.FC = () => {
           <div className="lg:col-span-2">
             {/* Video Player */}
             <div className="bg-black aspect-video rounded-lg overflow-hidden mb-4">
-              {video.hlsUrl ? (
+              {video.localPath || video.hlsUrl ? (
                 <video
                   controls
                   className="w-full h-full"
-                  src={video.hlsUrl}
+                  src={video.localPath ? `${import.meta.env.VITE_API_URL}${video.localPath}` : video.hlsUrl}
                   poster={video.thumbnailUrl}
                 >
                   Your browser does not support the video tag.
                 </video>
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-800">
-                  <p className="text-white">Video player placeholder</p>
+                  <p className="text-white">Video processing...</p>
                 </div>
               )}
             </div>

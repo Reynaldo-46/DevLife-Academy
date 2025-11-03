@@ -16,6 +16,7 @@ export class VideosService {
         tags: createVideoDto.tags || [],
         visibility: (createVideoDto.visibility as VideoVisibility) || 'PUBLIC',
         publishedAt: new Date(), // Auto-publish videos on creation
+        transcodingStatus: 'COMPLETED', // Set as completed so videos are playable immediately
       },
       include: {
         creator: {

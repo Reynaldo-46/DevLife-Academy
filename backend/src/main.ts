@@ -2,14 +2,24 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Enable CORS
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     credentials: true,
+  });
+
+  // Serve static files - UPDATED
+  const uploadsPath = join(process.cwd(), 'uploads');
+  console.log('📁 Serving uploads from:', uploadsPath);
+  
+  app.useStaticAssets(uploadsPath, {
+    prefix: '/uploads',
   });
 
   // Global validation pipe

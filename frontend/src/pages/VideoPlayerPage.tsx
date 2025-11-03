@@ -23,7 +23,7 @@ const VideoPlayerPage: React.FC = () => {
       try {
         const videoData = await videosAPI.getVideo(id);
         setVideo(videoData);
-        
+
         const commentsData = await videosAPI.getComments(id);
         setComments(commentsData);
       } catch (error) {
@@ -52,6 +52,25 @@ const VideoPlayerPage: React.FC = () => {
       }
     };
   }, [video, watchTime]);
+
+  useEffect(() => {
+  if (video) {
+    console.log('Video object:', video);
+    console.log('Original path:', video.originalPath);
+    console.log('Processed path:', video.processedPath);
+    console.log('HLS URL:', video.hlsUrl);
+    console.log('Thumbnail:', video.thumbnailPath);
+    console.log('API URL:', import.meta.env.VITE_API_URL);
+    
+    // Use processedPath if available, otherwise originalPath
+    const videoPath = video.processedPath || video.originalPath;
+    // Don't add /uploads/ prefix since it's already in the path
+    const videoSrc = videoPath 
+      ? `${import.meta.env.VITE_API_URL}/${videoPath}` 
+      : video.hlsUrl;
+    console.log('Final video URL:', videoSrc);
+  }
+}, [video]);
 
   const handleLike = async () => {
     if (!video || !isAuthenticated) return;
@@ -120,20 +139,29 @@ const VideoPlayerPage: React.FC = () => {
           <div className="lg:col-span-2">
             {/* Video Player */}
             <div className="bg-black aspect-video rounded-lg overflow-hidden mb-4">
-              {video.localPath || video.hlsUrl ? (
-                <video
-                  controls
-                  className="w-full h-full"
-                  src={video.localPath ? `${import.meta.env.VITE_API_URL}${video.localPath}` : video.hlsUrl}
-                  poster={video.thumbnailUrl}
-                >
-                  Your browser does not support the video tag.
-                </video>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-800">
-                  <p className="text-white">Video processing...</p>
-                </div>
-              )}
+              {(video.processedPath || video.originalPath || video.hlsUrl) ? (
+  <video
+    controls
+    className="w-full h-full"
+    src={(video.processedPath || video.originalPath)
+      ? `${import.meta.env.VITE_API_URL}/${video.processedPath || video.originalPath}` 
+      : video.hlsUrl}
+    poster={video.thumbnailPath
+      ? `${import.meta.env.VITE_API_URL}/${video.thumbnailPath}` 
+      : undefined}
+    onError={(e) => {
+      console.error('Video error:', e);
+      console.error('Failed URL:', e.currentTarget.src);
+    }}
+  >
+    Your browser does not support the video tag.
+  </video>
+) : (
+  <div className="w-full h-full flex items-center justify-center bg-gray-800">
+    <p className="text-white">Video processing...</p>
+  </div>
+)}
+
             </div>
 
             {/* Video Info */}

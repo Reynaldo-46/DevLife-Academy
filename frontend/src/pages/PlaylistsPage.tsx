@@ -1,25 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../services/api';
-
-interface Video {
-  id: string;
-  title: string;
-  description: string;
-  thumbnailUrl: string;
-  duration: number;
-  views: number;
-  publishedAt: string;
-  creator: {
-    id: string;
-    name: string;
-    profileImage: string;
-  };
-  _count: {
-    likes: number;
-    comments: number;
-  };
-}
+import { videosAPI } from '../services/api';
+import type { Video } from '../types';
 
 export default function PlaylistsPage() {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -33,8 +15,9 @@ export default function PlaylistsPage() {
   const fetchVideos = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/videos');
-      setVideos(response.data);
+      const data = await videosAPI.getVideos({});
+      setVideos(data);
+      setError('');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load videos');
     } finally {
@@ -42,23 +25,26 @@ export default function PlaylistsPage() {
     }
   };
 
-  const formatDuration = (seconds: number) => {
+  const formatDuration = (seconds?: number) => {
+    if (!seconds) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const formatViews = (views: number) => {
-    if (views >= 1000000) {
-      return `${(views / 1000000).toFixed(1)}M`;
+  const formatViews = (count?: number) => {
+    if (!count) return '0';
+    if (count >= 1000000) {
+      return `${(count / 1000000).toFixed(1)}M`;
     }
-    if (views >= 1000) {
-      return `${(views / 1000).toFixed(1)}K`;
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K`;
     }
-    return views.toString();
+    return count.toString();
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Recently';
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
@@ -137,14 +123,14 @@ export default function PlaylistsPage() {
             {videos.map((video) => (
               <Link
                 key={video.id}
-                to={`/video/${video.id}`}
+                to={`/videos/${video.id}`}
                 className="group bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 {/* Thumbnail */}
                 <div className="relative aspect-video bg-gray-200 dark:bg-gray-700">
-                  {video.thumbnailUrl ? (
+                  {video.thumbnailPath ? (
                     <img
-                      src={video.thumbnailUrl}
+                      src={`${import.meta.env.VITE_API_URL}/${video.thumbnailPath}`}
                       alt={video.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -194,24 +180,26 @@ export default function PlaylistsPage() {
                   </h3>
 
                   {/* Creator info */}
-                  <div className="flex items-center mb-2">
-                    {video.creator.profileImage ? (
-                      <img
-                        src={video.creator.profileImage}
-                        alt={video.creator.name}
-                        className="w-8 h-8 rounded-full mr-2"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center mr-2">
-                        <span className="text-white text-sm font-medium">
-                          {video.creator.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {video.creator.name}
-                    </span>
-                  </div>
+                  {video.creator && (
+                    <div className="flex items-center mb-2">
+                      {video.creator.profileImage ? (
+                        <img
+                          src={video.creator.profileImage}
+                          alt={video.creator.name}
+                          className="w-8 h-8 rounded-full mr-2"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center mr-2">
+                          <span className="text-white text-sm font-medium">
+                            {video.creator.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {video.creator.name}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Video stats */}
                   <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
@@ -220,27 +208,29 @@ export default function PlaylistsPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
-                      {formatViews(video.views)} views
+                      {formatViews(video._count?.likes)} views
                     </span>
                     <span>•</span>
                     <span>{formatDate(video.publishedAt)}</span>
                   </div>
 
                   {/* Engagement stats */}
-                  <div className="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                      </svg>
-                      {video._count.likes}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      {video._count.comments}
-                    </span>
-                  </div>
+                  {video._count && (
+                    <div className="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                        </svg>
+                        {video._count.likes}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        {video._count.comments}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </Link>
             ))}

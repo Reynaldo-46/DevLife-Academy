@@ -17,9 +17,11 @@ export interface Video {
   tags: string[];
   visibility: 'PUBLIC' | 'PRIVATE' | 'PAID';
   price?: number;
+  originalPath?: string;      
+  processedPath?: string;     
+  thumbnailPath?: string;     
   s3Key?: string;
   hlsUrl?: string;
-  thumbnailUrl?: string;
   duration?: number;
   transcript?: string;
   publishedAt?: string;

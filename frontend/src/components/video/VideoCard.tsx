@@ -34,13 +34,13 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       <div className="card-hover overflow-hidden transition-all duration-300">
         {/* Thumbnail */}
         <div className="relative aspect-video bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 overflow-hidden">
-          {video.thumbnailUrl ? (
-            <img
-              src={video.thumbnailUrl}
-              alt={video.title}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
-          ) : (
+          {video.thumbnailPath ? (
+  <img
+    src={`${import.meta.env.VITE_API_URL}/${video.thumbnailPath}`} 
+    alt={video.title}
+    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+  />
+) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600">
               <span className="text-white text-5xl font-bold opacity-30">
                 {video.title.charAt(0).toUpperCase()}
